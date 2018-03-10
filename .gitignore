@@ -1,0 +1,5 @@
+*.o
+*.d
+*.swp
+meshgen
+*.obj
