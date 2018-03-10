@@ -12,6 +12,8 @@ the `W` key.
 
 License
 -------
+Copyright (C) 2018 John Tsiombikas <nuclear@member.fsf.org>
+
 Meshgen is free software, you may use, copy, modify, and redistribute it under
 the terms of the GNU General Public License v3, or any later version published
 by the Free Software Foundation. See COPYING for detail.
