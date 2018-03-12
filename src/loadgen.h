@@ -8,6 +8,7 @@ typedef bool (*MeshGenFunc)(Mesh*, void*);
 struct MeshGen {
 	void *so;
 	MeshGenFunc generate;
+	char *sofile;
 };
 
 MeshGen *load_meshgen(const char *src_fname);
