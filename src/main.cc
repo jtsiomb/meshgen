@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <map>
 #include <unistd.h>
 #include "opengl.h"
 #include <GL/glut.h>
 #include <gmath/gmath.h>
 #include "mesh.h"
 #include "opt.h"
+#include "object.h"
 #include "loadgen.h"
 
 static bool init();
@@ -19,7 +21,7 @@ static void mouse(int bn, int st, int x, int y);
 static void motion(int x, int y);
 static bool reload();
 
-static Mesh *mesh;
+static Object *objlist;
 static bool opt_grid = true;
 
 static float cam_theta, cam_phi = 25, cam_dist = 5;
@@ -28,6 +30,7 @@ static Vec3 cam_pos = Vec3(0, 1, 0);
 static int prev_x, prev_y;
 static bool bnstate[8];
 
+static std::map<void*, unsigned int> textures;
 
 int main(int argc, char **argv)
 {
@@ -79,6 +82,11 @@ static bool init()
 
 static void cleanup()
 {
+	std::map<void*, unsigned int>::iterator it = textures.begin();
+	while(it != textures.end()) {
+		glDeleteTextures(1, &it->second);
+		++it;
+	}
 }
 
 static void set_light(int idx, const Vec3 &pos, const Vec3 &color)
@@ -114,9 +122,39 @@ static void display()
 		draw_grid(0.5, 10);
 	}
 
-	if(mesh) {
-		mesh->draw();
+	Object *obj = objlist;
+	while(obj) {
+		glPushMatrix();
+		glMultMatrixf(obj->xform[0]);
+
+		float col[4];
+		col[0] = obj->color.x;
+		col[1] = obj->color.y;
+		col[2] = obj->color.z;
+		col[3] = 1.0f;
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
+
+		col[0] = obj->specular.x;
+		col[1] = obj->specular.y;
+		col[2] = obj->specular.z;
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, obj->shininess);
+
+		unsigned int tex = obj->texture.pixels ? textures[obj->texture.pixels] : 0;
+		if(tex) {
+			glEnable(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, tex);
+		} else {
+			glDisable(GL_TEXTURE_2D);
+		}
+
+		obj->mesh->draw();
+
+		glPopMatrix();
+		obj = obj->next;
 	}
+
+	glDisable(GL_TEXTURE_2D);
 
 	glutSwapBuffers();
 	assert(glGetError() == GL_NO_ERROR);
@@ -186,10 +224,9 @@ static void keydown(unsigned char key, int x, int y)
 
 	case 'w':
 	case 'W':
-		if(mesh) {
-			if(mesh->dump_obj("mesh.obj")) {
-				printf("Mesh saved: mesh.obj\n");
-			}
+		printf("dumping: dump.obj\n");
+		if(!dump_objlist(objlist, "dump.obj")) {
+			fprintf(stderr, "failed to dump object(s)\n");
 		}
 		break;
 
@@ -249,22 +286,97 @@ static void motion(int x, int y)
 	}
 }
 
+static unsigned int intfmt(PixelFormat fmt)
+{
+	switch(fmt) {
+	case PFMT_RGB:
+		return GL_RGB;
+	case PFMT_RGBA:
+		return GL_RGBA;
+	case PFMT_RGB_FLOAT:
+		return GL_RGB16F;
+	case PFMT_RGBA_FLOAT:
+		return GL_RGBA16F;
+	default:
+		break;
+	}
+	return 0;
+}
+
+static unsigned int pixfmt(PixelFormat fmt)
+{
+	switch(fmt) {
+	case PFMT_RGB:
+	case PFMT_RGB_FLOAT:
+		return GL_RGB;
+	case PFMT_RGBA:
+	case PFMT_RGBA_FLOAT:
+		return GL_RGBA;
+	default:
+		break;
+	}
+	return 0;
+}
+
+static unsigned int pixtype(PixelFormat fmt)
+{
+	switch(fmt) {
+	case PFMT_RGB:
+	case PFMT_RGBA:
+		return GL_UNSIGNED_BYTE;
+	case PFMT_RGB_FLOAT:
+	case PFMT_RGBA_FLOAT:
+		return GL_FLOAT;
+	default:
+		break;
+	}
+	return 0;
+}
 
 static bool reload()
 {
 	MeshGen *mgen = load_meshgen(opt.fname);
 	if(!mgen) return false;
 
-	Mesh *newmesh = new Mesh;
-	if(!mgen->generate(newmesh, 0)) {
+	Object *newlist = mgen->generate(0);
+	if(!newlist) {
 		fprintf(stderr, "mesh generation failed\n");
-		delete newmesh;
 		free_meshgen(mgen);
 		return false;
 	}
 	free_meshgen(mgen);
 
-	delete mesh;
-	mesh = newmesh;
+	while(objlist) {
+		Object *tmp = objlist;
+		objlist = objlist->next;
+		delete tmp;
+	}
+	objlist = newlist;
+
+	std::map<void*, unsigned int>::iterator it = textures.begin();
+	while(it != textures.end()) {
+		glDeleteTextures(1, &it->second);
+		++it;
+	}
+
+	Object *obj = objlist;
+	while(obj) {
+		if(obj->texture.pixels) {
+			unsigned int tex = textures[obj->texture.pixels];
+			if(!tex) {
+				glGenTextures(1, &tex);
+				glBindTexture(GL_TEXTURE_2D, tex);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP_SGIS, 1);
+				glTexImage2D(GL_TEXTURE_2D, 0, intfmt(obj->texture.fmt), obj->texture.width,
+						obj->texture.height, 0, pixfmt(obj->texture.fmt), pixtype(obj->texture.fmt),
+						obj->texture.pixels);
+
+				textures[obj->texture.pixels] = tex;
+			}
+		}
+		obj = obj->next;
+	}
 	return true;
 }

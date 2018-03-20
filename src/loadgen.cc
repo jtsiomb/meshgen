@@ -6,7 +6,7 @@
 #include "loadgen.h"
 #include "opt.h"
 
-#define CXXFLAGS	"-pedantic -Wall -O3"
+#define CXXFLAGS	"-pedantic -Wall -O3 -fPIC"
 
 MeshGen *load_meshgen(const char *src_fname)
 {

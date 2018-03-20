@@ -1129,7 +1129,7 @@ bool Mesh::dump_obj(const char *fname) const
 	return false;
 }
 
-bool Mesh::dump_obj(FILE *fp) const
+bool Mesh::dump_obj(FILE *fp, int voffs) const
 {
 	if(!has_attrib(MESH_ATTR_VERTEX)) {
 		return false;
@@ -1137,20 +1137,20 @@ bool Mesh::dump_obj(FILE *fp) const
 
 	for(int i=0; i<(int)nverts; i++) {
 		Vec4 v = get_attrib(MESH_ATTR_VERTEX, i);
-		fprintf(fp, "v %g %g %g\n", v.x, v.y, v.z);
+		fprintf(fp, "v %f %f %f\n", v.x, v.y, v.z);
 	}
 
 	if(has_attrib(MESH_ATTR_NORMAL)) {
 		for(int i=0; i<(int)nverts; i++) {
 			Vec4 v = get_attrib(MESH_ATTR_NORMAL, i);
-			fprintf(fp, "vn %g %g %g\n", v.x, v.y, v.z);
+			fprintf(fp, "vn %f %f %f\n", v.x, v.y, v.z);
 		}
 	}
 
 	if(has_attrib(MESH_ATTR_TEXCOORD)) {
 		for(int i=0; i<(int)nverts; i++) {
 			Vec4 v = get_attrib(MESH_ATTR_TEXCOORD, i);
-			fprintf(fp, "vt %g %g\n", v.x, v.y);
+			fprintf(fp, "vt %f %f\n", v.x, v.y);
 		}
 	}
 
@@ -1163,14 +1163,14 @@ bool Mesh::dump_obj(FILE *fp) const
 		for(int i=0; i<numtri; i++) {
 			fputc('f', fp);
 			for(int j=0; j<3; j++) {
-				unsigned int idx = *idxptr++ + 1;
+				unsigned int idx = *idxptr++ + 1 + voffs;
 				fprintf(fp, " %u/%u/%u", idx, idx, idx);
 			}
 			fputc('\n', fp);
 		}
 	} else {
 		int numtri = nverts / 3;
-		unsigned int idx = 1;
+		unsigned int idx = 1 + voffs;
 		for(int i=0; i<numtri; i++) {
 			fputc('f', fp);
 			for(int j=0; j<3; j++) {

@@ -2,8 +2,9 @@
 #define LOADGEN_H_
 
 class Mesh;
+class Object;
 
-typedef bool (*MeshGenFunc)(Mesh*, void*);
+typedef Object *(*MeshGenFunc)(void*);
 
 struct MeshGen {
 	void *so;

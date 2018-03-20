@@ -3,10 +3,10 @@ PREFIX = /usr/local
 src = $(wildcard src/*.cc)
 obj = $(src:.cc=.o)
 dep = $(obj:.o=.d)
-inst_hdr = src/mesh.h src/meshgen.h src/geom.h
+inst_hdr = src/mesh.h src/meshgen.h src/geom.h src/object.h
 bin = meshgen
 
-CXXFLAGS = -pedantic -Wall -g -Isrc -DPREFIX=\"$(PREFIX)\"
+CXXFLAGS = -pedantic -Wall -g -Isrc -DPREFIX=\"$(PREFIX)\" -fPIC
 LDFLAGS = -lGL -lGLU -lglut -lGLEW -lm -lgmath -ldl -rdynamic
 
 $(bin): $(obj)
