@@ -1,7 +1,3 @@
-#include "object.h"
-#include "mesh.h"
-#include "meshgen.h"
-
 #define TEXSZ	256
 
 // The generate function must be declared as extern "C" for meshtool to
@@ -30,7 +26,6 @@ extern "C" Object *generate(void *cls)
 			*pixels++ = (i ^ j) << 2;
 		}
 	}
-
 
 	/* --- sphere --- */
 	Object *sph = new Object;
