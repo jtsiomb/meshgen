@@ -11,7 +11,7 @@ The current mesh is saved to a Wavefront OBJ file when pressing the `W` key.
 Any generated textures are saved as individual image files, and referenced in
 the exported OBJ material file.
 
-![shot](http://nuclear.mutantstargoat.com/sw/meshgen/img/meshgen640.jpg)
+![shot](http://nuclear.mutantstargoat.com/sw/meshgen/img/meshgen640.png)
 
 Please note that this tool is meant as an aid for creating procedural geometry
 with my `Mesh` class and mesh generation utility functions (see `mesh/`
