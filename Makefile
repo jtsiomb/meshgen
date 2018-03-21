@@ -6,8 +6,25 @@ dep = $(obj:.o=.d)
 inst_hdr = src/mesh.h src/meshgen.h src/geom.h src/object.h
 bin = meshgen
 
-CXXFLAGS = -pedantic -Wall -g -Isrc -DPREFIX=\"$(PREFIX)\" -fPIC
-LDFLAGS = -lGL -lGLU -lglut -lGLEW -lm -lgmath -ldl -rdynamic
+CXXFLAGS = -pedantic -Wall -g -Isrc -DPREFIX=\"$(PREFIX)\"
+LDFLAGS = $(libgl) -lm -lgmath -lresman -lpthread
+
+sys := $(shell uname -s | sed 's/MINGW32.*/mingw/')
+
+ifeq ($(sys), mingw)
+	src += $(wildcard src/win/*.cc)
+
+	libgl = -lopengl32 -lglu32 -lfreeglut -lglew32
+
+	LDFLAGS += -lwinmm -lwsock32
+else
+	src += $(wildcard src/unix/*.cc)
+
+	libgl = -lGL -lGLU -lglut -lGLEW
+
+	CXXFLAGS += -fPIC
+	LDFLAGS += -ldl -rdynamic
+endif
 
 $(bin): $(obj)
 	$(CXX) -o $@ $(obj) $(LDFLAGS)

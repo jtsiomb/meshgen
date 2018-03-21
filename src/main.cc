@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <map>
-#include <unistd.h>
 #include "opengl.h"
 #include <GL/glut.h>
 #include <gmath/gmath.h>
+#include <resman.h>
+#include "mainloop.h"
 #include "mesh.h"
 #include "opt.h"
 #include "object.h"
@@ -19,7 +20,9 @@ static void reshape(int x, int y);
 static void keydown(unsigned char key, int x, int y);
 static void mouse(int bn, int st, int x, int y);
 static void motion(int x, int y);
-static bool reload();
+
+static int load_func(const char *fname, int id, void *cls);
+static int done_func(int id, void *cls);
 
 static Object *objlist;
 static bool opt_grid = true;
@@ -31,6 +34,8 @@ static int prev_x, prev_y;
 static bool bnstate[8];
 
 static std::map<void*, unsigned int> textures;
+
+static struct resman *resman;
 
 int main(int argc, char **argv)
 {
@@ -55,7 +60,7 @@ int main(int argc, char **argv)
 	}
 	atexit(cleanup);
 
-	glutMainLoop();
+	main_loop(resman);
 	return 0;
 }
 
@@ -75,13 +80,24 @@ static bool init()
 
 	glEnable(GL_MULTISAMPLE);
 
-	reload();
+	if(!(resman = resman_create())) {
+		fprintf(stderr, "failed to create resource manager\n");
+		return false;
+	}
+	resman_set_load_func(resman, load_func, 0);
+	resman_set_done_func(resman, done_func, 0);
+
+	if(resman_add(resman, opt.fname, 0) == -1) {
+		return false;
+	}
 
 	return true;
 }
 
 static void cleanup()
 {
+	resman_free(resman);
+
 	std::map<void*, unsigned int>::iterator it = textures.begin();
 	while(it != textures.end()) {
 		glDeleteTextures(1, &it->second);
@@ -104,6 +120,8 @@ static void set_light(int idx, const Vec3 &pos, const Vec3 &color)
 
 static void display()
 {
+	resman_poll(resman);
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_MODELVIEW);
@@ -216,12 +234,6 @@ static void keydown(unsigned char key, int x, int y)
 	case 27:
 		exit(0);
 
-	case 'r':
-	case 'R':
-		reload();
-		glutPostRedisplay();
-		break;
-
 	case 'w':
 	case 'W':
 		printf("dumping: dump.obj\n");
@@ -232,7 +244,7 @@ static void keydown(unsigned char key, int x, int y)
 
 	case 'g':
 		opt_grid = !opt_grid;
-		glutPostRedisplay();
+		post_redisplay();
 		break;
 	}
 }
@@ -259,7 +271,7 @@ static void motion(int x, int y)
 
 		if(cam_phi < -90) cam_phi = -90;
 		if(cam_phi > 90) cam_phi = 90;
-		glutPostRedisplay();
+		post_redisplay();
 	}
 	if(bnstate[1]) {
 		float panx = dx * 0.01;
@@ -276,13 +288,13 @@ static void motion(int x, int y)
 		Vec3 up = Vec3(0, pany, 0) * cmat;
 		cam_pos += right - up;
 
-		glutPostRedisplay();
+		post_redisplay();
 	}
 	if(bnstate[2]) {
 		cam_dist += dy * 0.1;
 
 		if(cam_dist < 0) cam_dist = 0;
-		glutPostRedisplay();
+		post_redisplay();
 	}
 }
 
@@ -333,18 +345,29 @@ static unsigned int pixtype(PixelFormat fmt)
 	return 0;
 }
 
-static bool reload()
-{
-	MeshGen *mgen = load_meshgen(opt.fname);
-	if(!mgen) return false;
+static MeshGen *mgen;
 
+static int load_func(const char *fname, int id, void *cls)
+{
+	printf("loading %s\n", fname);
+	mgen = load_meshgen(fname);
+	return mgen ? 0 : -1;
+}
+
+static int done_func(int id, void *cls)
+{
+	if(!mgen) return -1;
+
+	printf("done, calling mesh generator\n");
 	Object *newlist = mgen->generate(0);
 	if(!newlist) {
 		fprintf(stderr, "mesh generation failed\n");
 		free_meshgen(mgen);
-		return false;
+		mgen = 0;
+		return -1;
 	}
 	free_meshgen(mgen);
+	mgen = 0;
 
 	while(objlist) {
 		Object *tmp = objlist;
@@ -358,6 +381,7 @@ static bool reload()
 		glDeleteTextures(1, &it->second);
 		++it;
 	}
+	textures.clear();
 
 	Object *obj = objlist;
 	while(obj) {
@@ -378,5 +402,5 @@ static bool reload()
 		}
 		obj = obj->next;
 	}
-	return true;
+	return 0;
 }

@@ -3,10 +3,16 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
-#include <alloca.h>
-#include <arpa/inet.h>
 #include "object.h"
 #include "mesh.h"
+
+#ifdef WIN32
+#include <malloc.h>
+#include <winsock2.h>
+#else
+#include <alloca.h>
+#include <arpa/inet.h>
+#endif
 
 Image::Image()
 {

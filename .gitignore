@@ -3,3 +3,6 @@
 *.swp
 meshgen
 *.obj
+*.ppm
+*.obj
+*.mtl
