@@ -15,6 +15,7 @@ enum {
 	MESH_ATTR_COLOR,
 	MESH_ATTR_BONEWEIGHTS,
 	MESH_ATTR_BONEIDX,
+	MESH_ATTR_TEXCOORD2,
 
 	NUM_MESH_ATTR
 };
@@ -220,6 +221,7 @@ public:
 	 * @{ */
 	float get_bsphere(Vec3 *center, float *rad) const;
 	const Sphere &get_bsphere() const;
+	/// @}
 
 	static void set_intersect_mode(unsigned int mode);
 	static unsigned int get_intersect_mode();

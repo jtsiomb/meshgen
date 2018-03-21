@@ -4,20 +4,13 @@
 #include <assert.h>
 #include "opengl.h"
 #include "mesh.h"
+//#include "logger.h"
 //#include "xform_node.h"
 
 #define USE_OLDGL
 
 bool Mesh::use_custom_sdr_attr = true;
-int Mesh::global_sdr_loc[NUM_MESH_ATTR] = { 0, 1, 2, 3, 4, 5, 6 };
-/*
-	(int)SDR_ATTR_VERTEX,
-	(int)SDR_ATTR_NORMAL,
-	(int)SDR_ATTR_TANGENT,
-	(int)SDR_ATTR_TEXCOORD,
-	(int)SDR_ATTR_COLOR,
-	-1, -1};
-*/
+int Mesh::global_sdr_loc[NUM_MESH_ATTR] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 unsigned int Mesh::intersect_mode = ISECT_DEFAULT;
 float Mesh::vertex_sel_dist = 0.01;
 float Mesh::vis_vecsize = 1.0;
@@ -680,6 +673,13 @@ bool Mesh::pre_draw() const
 			glColorPointer(vattr[MESH_ATTR_COLOR].nelem, GL_FLOAT, 0, 0);
 			glEnableClientState(GL_COLOR_ARRAY);
 		}
+		if(vattr[MESH_ATTR_TEXCOORD2].vbo_valid) {
+			glClientActiveTexture(GL_TEXTURE1);
+			glBindBuffer(GL_ARRAY_BUFFER, vattr[MESH_ATTR_TEXCOORD2].vbo);
+			glTexCoordPointer(vattr[MESH_ATTR_TEXCOORD2].nelem, GL_FLOAT, 0, 0);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			glClientActiveTexture(GL_TEXTURE0);
+		}
 #endif
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -724,6 +724,11 @@ void Mesh::post_draw() const
 		}
 		if(vattr[MESH_ATTR_COLOR].vbo_valid) {
 			glDisableClientState(GL_COLOR_ARRAY);
+		}
+		if(vattr[MESH_ATTR_TEXCOORD2].vbo_valid) {
+			glClientActiveTexture(GL_TEXTURE1);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glClientActiveTexture(GL_TEXTURE0);
 		}
 #endif
 	}
@@ -903,7 +908,7 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 
 	HitPoint nearest_hit;
 	nearest_hit.dist = FLT_MAX;
-	nearest_hit.obj = 0;
+	nearest_hit.data = 0;
 
 	if(Mesh::intersect_mode & ISECT_VERTICES) {
 		// we asked for "intersections" with the vertices of the mesh
@@ -934,7 +939,7 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 
 		if(nearest_vidx != -1) {
 			hitvert = varr[nearest_vidx];
-			nearest_hit.obj = &hitvert;
+			nearest_hit.data = &hitvert;
 		}
 
 	} else {
@@ -961,17 +966,17 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 		}
 	}
 
-	if(nearest_hit.obj) {
+	if(nearest_hit.data) {
 		if(hit) {
 			*hit = nearest_hit;
 
 			// if we are interested in the mesh and not the faces set obj to this
 			if(Mesh::intersect_mode & ISECT_FACE) {
-				hit->obj = &hitface;
+				hit->data = &hitface;
 			} else if(Mesh::intersect_mode & ISECT_VERTICES) {
-				hit->obj = &hitvert;
+				hit->data = &hitvert;
 			} else {
-				hit->obj = this;
+				hit->data = (void*)this;
 			}
 		}
 		return true;
@@ -1087,7 +1092,7 @@ bool Mesh::dump(FILE *fp) const
 	}
 
 	fprintf(fp, "VERTEX ATTRIBUTES\n");
-	static const char *label[] = { "pos", "nor", "tan", "tex", "col", "bw", "bid" };
+	static const char *label[] = { "pos", "nor", "tan", "tex", "col", "bw", "bid", "tex2" };
 	static const char *elemfmt[] = { 0, " %s(%g)", " %s(%g, %g)", " %s(%g, %g, %g)", " %s(%g, %g, %g, %g)", 0 };
 
 	for(int i=0; i<(int)nverts; i++) {
@@ -1432,7 +1437,7 @@ bool Triangle::intersect(const Ray &ray, HitPoint *hit) const
 		hit->dist = t;
 		hit->pos = ray.origin + ray.dir * t;
 		hit->normal = normal;
-		hit->obj = this;
+		hit->data = (void*)this;
 	}
 	return true;
 }
