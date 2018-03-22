@@ -26,6 +26,7 @@ static int done_func(int id, void *cls);
 
 static Object *objlist;
 static bool opt_grid = true;
+static bool opt_wire;
 
 static float cam_theta, cam_phi = 25, cam_dist = 5;
 static Vec3 cam_pos = Vec3(0, 1, 0);
@@ -140,6 +141,10 @@ static void display()
 		draw_grid(0.5, 10);
 	}
 
+	if(opt_wire) {
+		glDisable(GL_LIGHTING);
+	}
+
 	Object *obj = objlist;
 	while(obj) {
 		glPushMatrix();
@@ -151,6 +156,7 @@ static void display()
 		col[2] = obj->color.z;
 		col[3] = 1.0f;
 		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
+		glColor3fv(col);
 
 		col[0] = obj->specular.x;
 		col[1] = obj->specular.y;
@@ -166,12 +172,17 @@ static void display()
 			glDisable(GL_TEXTURE_2D);
 		}
 
-		obj->mesh->draw();
+		if(opt_wire) {
+			obj->mesh->draw_wire();
+		} else {
+			obj->mesh->draw();
+		}
 
 		glPopMatrix();
 		obj = obj->next;
 	}
 
+	glEnable(GL_LIGHTING);
 	glDisable(GL_TEXTURE_2D);
 
 	glutSwapBuffers();
@@ -234,12 +245,16 @@ static void keydown(unsigned char key, int x, int y)
 	case 27:
 		exit(0);
 
-	case 'w':
-	case 'W':
+	case 's':
 		printf("dumping: dump.obj\n");
 		if(!dump_objlist(objlist, "dump.obj")) {
 			fprintf(stderr, "failed to dump object(s)\n");
 		}
+		break;
+
+	case 'w':
+		opt_wire = !opt_wire;
+		post_redisplay();
 		break;
 
 	case 'g':

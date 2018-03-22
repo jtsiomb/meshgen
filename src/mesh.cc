@@ -609,23 +609,37 @@ bool Mesh::remove_face(int fidx)
 
 bool Mesh::remove_faces(int first, int last)
 {
-	if(last >= get_poly_count()) {
+	int num_polys = get_poly_count();
+
+	if(last < first) {
+		int tmp = first;
+		first = last;
+		last = tmp;
+	}
+
+	if(first >= num_polys) {
 		return false;
+	}
+	if(last >= num_polys) {
+		last = num_polys - 1;
 	}
 
 	first *= 3;
 	last *= 3;
+	int end = last + 3;
 
 	if(is_indexed()) {
 		get_index_data();	// invalidate IBO
-		idata.erase(idata.begin() + first, idata.begin() + last + 3);
+		idata.erase(idata.begin() + first, idata.begin() + end);
+		nfaces = idata.size() / 3;
 	} else {
 		for(int i=0; i<NUM_MESH_ATTR; i++) {
 			if(!has_attrib(i)) continue;
 
 			get_attrib_data(i);	// invalidate VBO
-			vattr[i].data.erase(vattr[i].data.begin() + first, vattr[i].data.begin() + last + 3);
+			vattr[i].data.erase(vattr[i].data.begin() + first, vattr[i].data.begin() + end);
 		}
+		nfaces = vattr[0].data.size() / 3;
 	}
 	return true;
 }
