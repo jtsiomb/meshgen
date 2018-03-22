@@ -4,7 +4,7 @@
 class Mesh;
 class Object;
 
-typedef Object *(*MeshGenFunc)(void*);
+typedef Object *(*MeshGenFunc)();
 
 struct MeshGen {
 	void *so;

@@ -2,7 +2,7 @@
 
 // The generate function must be declared as extern "C" for meshtool to
 // be able to find it.
-extern "C" Object *generate(void *cls)
+extern "C" Object *generate()
 {
 	Mat4 xform;
 

@@ -359,7 +359,7 @@ static int done_func(int id, void *cls)
 	if(!mgen) return -1;
 
 	printf("done, calling mesh generator\n");
-	Object *newlist = mgen->generate(0);
+	Object *newlist = mgen->generate();
 	if(!newlist) {
 		fprintf(stderr, "mesh generation failed\n");
 		free_meshgen(mgen);
