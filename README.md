@@ -5,12 +5,11 @@ About
 -----
 Meshgen is a tool to simplify the creation of procedural meshes. It uses the
 system C++ compiler, to build a user-supplied snippet of C++ code, which needs
-to expose a `generate` function. The user-supplied function is called
-automatically whenever the program detects that the source file has been
-modified externally, and the generated mesh is rendered in the viewport.  The
-current mesh is saved to a Wavefront OBJ file when pressing the `W` key.  Any
-generated textures are saved as individual image files, and referenced in the
-exported OBJ material file.
+to expose a `generate` function. The code is recompiled and the `generate`
+function is called automatically whenever the program detects that the source
+file has been modified externally. The current mesh is saved to a Wavefront OBJ
+file when pressing the `W` key. Any generated textures are saved as individual
+image files, and referenced in the exported OBJ material file.
 
 ![shot](http://nuclear.mutantstargoat.com/sw/meshgen/img/meshgen640.png)
 
