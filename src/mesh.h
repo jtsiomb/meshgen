@@ -188,6 +188,9 @@ public:
 
 	void calc_face_normals(); // this is only guaranteed to work on an exploded mesh
 
+	bool remove_face(int fidx);
+	bool remove_faces(int first, int last);
+
 	// adds a bone and returns its index
 	/*int add_bone(XFormNode *bone);
 	const XFormNode *get_bone(int idx) const;

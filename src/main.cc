@@ -190,11 +190,11 @@ static void draw_grid(float delta, int count)
 
 	glBegin(GL_LINES);
 	glColor3f(1, 0, 0);
-	glVertex3f(0, 0, -max_dist);
-	glVertex3f(0, 0, max_dist);
-	glColor3f(0, 1, 0);
 	glVertex3f(-max_dist, 0, 0);
 	glVertex3f(max_dist, 0, 0);
+	glColor3f(0, 1, 0);
+	glVertex3f(0, 0, -max_dist);
+	glVertex3f(0, 0, max_dist);
 	glEnd();
 
 	glLineWidth(1.0);
@@ -274,8 +274,8 @@ static void motion(int x, int y)
 		post_redisplay();
 	}
 	if(bnstate[1]) {
-		float panx = dx * 0.01;
-		float pany = dy * 0.01;
+		float panx = -dx * 0.01;
+		float pany = -dy * 0.01;
 
 		float theta = deg_to_rad(cam_theta);
 		float phi = deg_to_rad(cam_phi);

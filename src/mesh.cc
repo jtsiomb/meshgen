@@ -602,6 +602,35 @@ void Mesh::calc_face_normals()
 	}
 }
 
+bool Mesh::remove_face(int fidx)
+{
+	return remove_faces(fidx, fidx);
+}
+
+bool Mesh::remove_faces(int first, int last)
+{
+	if(last >= get_poly_count()) {
+		return false;
+	}
+
+	first *= 3;
+	last *= 3;
+
+	if(is_indexed()) {
+		get_index_data();	// invalidate IBO
+		idata.erase(idata.begin() + first, idata.begin() + last + 3);
+	} else {
+		for(int i=0; i<NUM_MESH_ATTR; i++) {
+			if(!has_attrib(i)) continue;
+
+			get_attrib_data(i);	// invalidate VBO
+			vattr[i].data.erase(vattr[i].data.begin() + first, vattr[i].data.begin() + last + 3);
+		}
+	}
+	return true;
+}
+
+
 /*
 int Mesh::add_bone(XFormNode *bone)
 {
