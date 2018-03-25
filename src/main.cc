@@ -37,6 +37,7 @@ static bool bnstate[8];
 static std::map<void*, unsigned int> textures;
 
 static struct resman *resman;
+static int polycount;
 
 int main(int argc, char **argv)
 {
@@ -236,7 +237,7 @@ static void reshape(int x, int y)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(50, (float)x / (float)y, 0.5, 500.0);
+	gluPerspective(50, (float)x / (float)y, 0.1, 500.0);
 }
 
 static void keydown(unsigned char key, int x, int y)
@@ -394,9 +395,12 @@ static int done_func(int id, void *cls)
 	std::map<void*, unsigned int>::iterator it = textures.begin();
 	while(it != textures.end()) {
 		glDeleteTextures(1, &it->second);
+		delete [] (unsigned char*)it->first;
 		++it;
 	}
 	textures.clear();
+
+	polycount = 0;
 
 	Object *obj = objlist;
 	while(obj) {
@@ -415,7 +419,12 @@ static int done_func(int id, void *cls)
 				textures[obj->texture.pixels] = tex;
 			}
 		}
+
+		polycount += obj->mesh->get_poly_count();
+
 		obj = obj->next;
 	}
+
+	printf("%d polygons\n", polycount);
 	return 0;
 }

@@ -23,7 +23,6 @@ Image::Image()
 
 Image::~Image()
 {
-	delete [] (char*)pixels;
 }
 
 

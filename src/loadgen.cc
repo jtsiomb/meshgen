@@ -11,7 +11,7 @@
 #include <dlfcn.h>
 #endif
 
-#define CXXFLAGS	"-pedantic -Wall -O3 -fPIC -include object.h -include mesh.h -include meshgen.h"
+#define CXXFLAGS	"-pedantic -Wall -Wno-unused-function -O3 -fPIC -include object.h -include mesh.h -include meshgen.h"
 
 MeshGen *load_meshgen(const char *src_fname)
 {
